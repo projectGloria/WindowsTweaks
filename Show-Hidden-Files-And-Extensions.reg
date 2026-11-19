@@ -1,0 +1,17 @@
+Windows Registry Editor Version 5.00
+
+; Explorer: show hidden files and show file extensions.
+; Per-user (HKCU); no admin rights needed.
+; Restart Explorer (or sign out/in) to apply.
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+
+; Show hidden files, folders and drives (1 = show, 2 = hide)
+"Hidden"=dword:00000001
+
+; Show file name extensions (0 = show, 1 = hide)
+"HideFileExt"=dword:00000000
+
+; Optional: also show protected operating system files.
+; Uncomment the line below if you want these visible too.
+;"ShowSuperHidden"=dword:00000001
