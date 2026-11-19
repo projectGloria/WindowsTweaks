@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+
+; Configure File Explorer to open directly to "This PC" instead of "Home" / Quick Access.
+; Per-user (HKCU); no admin rights needed.
+; 1 = This PC, 2 = Home / Quick Access
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"LaunchTo"=dword:00000001

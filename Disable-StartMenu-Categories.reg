@@ -1,4 +1,40 @@
 Windows Registry Editor Version 5.00
 
+; Clean Windows 11 Start Menu (Pinned Apps only):
+; Hides the All Apps / Categories list, Recently Added apps, and the Recommended section.
+; Requires Administrator privileges for HKLM policy keys.
+; Restart StartMenuExperienceHost & Explorer (or sign out/in / reboot) to apply.
+
+; ---- Hide All Apps / Categories list ----
+
 [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer]
 "NoStartMenuMorePrograms"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"NoStartMenuMorePrograms"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Start]
+"HideAppList"=dword:00000001
+"HideRecommendedSection"=dword:00000001
+"HideRecentlyAddedApps"=dword:00000001
+
+; Required on Windows 11 24H2 (including Pro & Enterprise LTSC) so Windows
+; honors HideRecommendedSection and removes the Recommended block completely.
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Education]
+"IsEducationEnvironment"=dword:00000001
+
+; ---- Hide Recommended / Recent section ----
+
+[HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer]
+"HideRecommendedSection"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer]
+"HideRecommendedSection"=dword:00000001
+"HideRecentlyAddedApps"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"Start_TrackDocs"=dword:00000000
+"Start_TrackProgs"=dword:00000000
+"Start_IrisRecommendations"=dword:00000000
+"Start_AccountNotifications"=dword:00000000
+"Start_Layout"=dword:00000001

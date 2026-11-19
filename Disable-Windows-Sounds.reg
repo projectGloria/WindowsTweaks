@@ -1,9 +1,15 @@
 Windows Registry Editor Version 5.00
 
 ; Disables all default Windows sounds (Default Beep / volume slider, warnings,
-; notifications, device connect, UAC, logon, Explorer navigation, etc.)
-; Equivalent to choosing the "No Sounds" scheme in Control Panel > Sound.
-; Per-user (HKCU); no admin rights needed. Sign out and back in to fully apply.
+; notifications, device connect, UAC, logon, Explorer navigation, startup, etc.)
+; Equivalent to choosing the "No Sounds" scheme in Control Panel > Sound and
+; unchecking "Play Windows Startup sound".
+; HKCU keys need no admin rights; HKLM startup sound key requires Admin.
+; Sign out and back in to fully apply.
+
+; Disable Windows Startup sound (machine-wide, requires Admin).
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI\BootAnimation]
+"DisableStartupSound"=dword:00000001
 
 ; Mark the active scheme as "No Sounds" so the Sound control panel agrees.
 [HKEY_CURRENT_USER\AppEvents\Schemes]

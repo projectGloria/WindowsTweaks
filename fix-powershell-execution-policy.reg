@@ -1,5 +1,9 @@
 Windows Registry Editor Version 5.00
 
+; Sets Windows PowerShell 5.1 ExecutionPolicy to RemoteSigned for
+; LocalMachine (64-bit & 32-bit) and CurrentUser.
+; Requires Administrator privileges for HKLM keys.
+
 [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell]
 "ExecutionPolicy"="RemoteSigned"
 
