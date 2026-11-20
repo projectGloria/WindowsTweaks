@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320">
+  <defs>
+    <radialGradient id="leftGlow" cx="0%" cy="50%" r="55%" fx="0%" fy="50%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.28" />
+      <stop offset="65%" stop-color="#3B82F6" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0" />
+    </radialGradient>
+    <clipPath id="cardClip">
+      <rect x="0.5" y="0.5" width="1199" height="319" rx="18" ry="18" />
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#cardClip)">
+    <!-- Base dark card -->
+    <rect x="0" y="0" width="1200" height="320" fill="#111216" />
+
+    <!-- Ambient left glow -->
+    <rect x="0" y="0" width="760" height="320" fill="url(#leftGlow)" />
+
+    <!-- Right geometric diagonal lines -->
+    <line x1="930" y1="-20" x2="1120" y2="340" stroke="#3B82F6" stroke-opacity="0.22" stroke-width="1.5" />
+    <line x1="1005" y1="-20" x2="1195" y2="340" stroke="#3B82F6" stroke-opacity="0.22" stroke-width="1.5" />
+    <line x1="1080" y1="-20" x2="1270" y2="340" stroke="#3B82F6" stroke-opacity="0.16" stroke-width="1.5" />
+
+    <!-- Left accent bar -->
+    <rect x="4" y="40" width="8" height="240" rx="4" fill="#3B82F6" />
+
+    <!-- Title & Subtitle -->
+    <text x="64" y="122" fill="#3B82F6" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="800" letter-spacing="-0.5">Windows Tweaks</text>
+    <text x="64" y="168" fill="#D4D4D8" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="400">Standalone Windows 11 registry utility with live status, profiles, and restore points</text>
+
+    <!-- Feature Pills -->
+    <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="500">
+      <!-- Pill 1: 13 Registry Tweaks -->
+      <rect x="64" y="220" width="206" height="42" rx="10" fill="#181A20" stroke="#2C2F3A" stroke-width="1" />
+      <circle cx="86" cy="241" r="5" fill="#3B82F6" />
+      <text x="102" y="246.5" fill="#E4E4E7">13 Registry Tweaks</text>
+
+      <!-- Pill 2: Live Status Detection -->
+      <rect x="284" y="220" width="226" height="42" rx="10" fill="#181A20" stroke="#2C2F3A" stroke-width="1" />
+      <circle cx="306" cy="241" r="5" fill="#3B82F6" />
+      <text x="322" y="246.5" fill="#E4E4E7">Live Status Detection</text>
+
+      <!-- Pill 3: JSON Profiles -->
+      <rect x="524" y="220" width="164" height="42" rx="10" fill="#181A20" stroke="#2C2F3A" stroke-width="1" />
+      <circle cx="546" cy="241" r="5" fill="#3B82F6" />
+      <text x="562" y="246.5" fill="#E4E4E7">JSON Profiles</text>
+
+      <!-- Pill 4: WinUtil Launcher -->
+      <rect x="702" y="220" width="188" height="42" rx="10" fill="#181A20" stroke="#2C2F3A" stroke-width="1" />
+      <circle cx="724" cy="241" r="5" fill="#3B82F6" />
+      <text x="740" y="246.5" fill="#E4E4E7">WinUtil Launcher</text>
+    </g>
+  </g>
+
+  <!-- Crisp outer border -->
+  <rect x="0.5" y="0.5" width="1199" height="319" rx="18" ry="18" fill="none" stroke="#262830" stroke-width="1" />
+</svg>
