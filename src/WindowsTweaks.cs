@@ -1141,6 +1141,12 @@ namespace WindowsTweaksApp
                                     <TextBlock Text='External Tools' FontFamily='Segoe UI' VerticalAlignment='Center'/>
                                 </StackPanel>
                             </Button>
+                            <Button x:Name='NavMyTools' Style='{StaticResource NavBtn}'>
+                                <StackPanel Orientation='Horizontal'>
+                                    <TextBlock Text='&#xE8B9;' FontFamily='Segoe MDL2 Assets' FontSize='14' VerticalAlignment='Center' Margin='0,0,10,0'/>
+                                    <TextBlock Text='My Tools' FontFamily='Segoe UI' VerticalAlignment='Center'/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
 
                         <!-- Profiles + Quick Actions -->
@@ -1190,7 +1196,7 @@ namespace WindowsTweaksApp
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column='0'>
                             <TextBlock x:Name='TxtSectionTitle' Text='All Tweaks' FontSize='20' FontWeight='Bold' Foreground='#F8FAFC'/>
-                            <TextBlock Text='Toggle any tweak directly — live registry status updates automatically.' FontSize='11.5' Foreground='#7B8CA5' Margin='0,2,0,0'/>
+                            <TextBlock x:Name='TxtSectionDescription' Text='Toggle any tweak directly — live registry status updates automatically.' FontSize='11.5' Foreground='#7B8CA5' Margin='0,2,0,0'/>
                         </StackPanel>
 
                         <Border Grid.Column='1' Background='#131925' BorderBrush='#253045' BorderThickness='1' CornerRadius='8' VerticalAlignment='Center' Padding='10,6'>
@@ -1612,6 +1618,28 @@ namespace WindowsTweaksApp
                                 </Grid>
                             </Border>
 
+                            <Border x:Name='CardShortcuts' Style='{StaticResource TweakCard}'>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width='42'/>
+                                        <ColumnDefinition Width='*'/>
+                                        <ColumnDefinition Width='Auto'/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width='36' Height='36' CornerRadius='8' Background='#172554' VerticalAlignment='Center'>
+                                        <TextBlock Text='&#xE71B;' FontFamily='Segoe MDL2 Assets' FontSize='16' Foreground='#60A5FA' HorizontalAlignment='Center' VerticalAlignment='Center'/>
+                                    </Border>
+                                    <StackPanel Grid.Column='1' Margin='12,0,14,0'>
+                                        <TextBlock Text='Custom Shortcut Creator' FontSize='13.5' FontWeight='SemiBold'/>
+                                        <TextBlock Text='Create named shortcuts with custom icons for Start, the taskbar, and Quick Access.' FontSize='11.5' Foreground='#8B9BB4' TextWrapping='Wrap' Margin='0,3,0,0'/>
+                                        <TextBlock x:Name='TxtShortcutsStatus' FontSize='11' Foreground='#64748B' TextWrapping='Wrap' Margin='0,3,0,0'/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column='2' Orientation='Horizontal' VerticalAlignment='Center'>
+                                        <Button x:Name='BtnCreateShortcut' Content='Create shortcut' Style='{StaticResource SubtleBtn}' Margin='0,0,12,0'/>
+                                        <CheckBox x:Name='TglShortcuts' Style='{StaticResource ToggleSwitch}' AutomationProperties.Name='Install Custom Shortcut Creator'/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
                         </StackPanel>
                     </ScrollViewer>
 
@@ -1712,7 +1740,8 @@ namespace WindowsTweaksApp
                 new CardMeta { Card = (Border)win.FindName("CardTipsAds"),     Category = "System", SearchText = "disable windows tips ads lock screen finish setting up nags suggestions" },
                 new CardMeta { Card = (Border)win.FindName("CardExecPolicy"),  Category = "System", SearchText = "fix powershell execution policy remotesigned scripts" },
                 new CardMeta { Card = (Border)win.FindName("CardPowerPlan"),   Category = "System", SearchText = "ultimate performance power plan powercfg cpu speed" },
-                new CardMeta { Card = (Border)win.FindName("CardWinUtil"),     Category = "Tools",  SearchText = "chris titus tech winutil preset advanced standard minimal gui" }
+                new CardMeta { Card = (Border)win.FindName("CardWinUtil"),     Category = "Tools",  SearchText = "chris titus tech winutil preset advanced standard minimal gui" },
+                new CardMeta { Card = (Border)win.FindName("CardShortcuts"),   Category = "MyTools", SearchText = "custom shortcut creator folder file context menu icon path start taskbar quick access pin" }
             };
 
             TextBox txtSearch = (TextBox)win.FindName("TxtSearch");
@@ -1741,11 +1770,12 @@ namespace WindowsTweaksApp
             Button navShell = (Button)win.FindName("NavShell");
             Button navSystem = (Button)win.FindName("NavSystem");
             Button navTools = (Button)win.FindName("NavTools");
+            Button navMyTools = (Button)win.FindName("NavMyTools");
 
             Action<string> setCategory = delegate(string cat)
             {
                 _activeCategory = cat;
-                foreach (Button b in new[] { navAll, navShell, navSystem, navTools })
+                foreach (Button b in new[] { navAll, navShell, navSystem, navTools, navMyTools })
                 {
                     b.Background = Brushes.Transparent;
                     b.Foreground = Hex("#94A3B8");
@@ -1755,10 +1785,14 @@ namespace WindowsTweaksApp
                 if (cat == "Shell") { activeBtn = navShell; title = "Shell & Explorer"; }
                 else if (cat == "System") { activeBtn = navSystem; title = "System & Performance"; }
                 else if (cat == "Tools") { activeBtn = navTools; title = "External Tools"; }
+                else if (cat == "MyTools") { activeBtn = navMyTools; title = "My Tools"; }
 
                 activeBtn.Background = Hex("#172554");
                 activeBtn.Foreground = Hex("#60A5FA");
                 ((TextBlock)win.FindName("TxtSectionTitle")).Text = title;
+                ((TextBlock)win.FindName("TxtSectionDescription")).Text = cat == "MyTools"
+                    ? "Install and open Windows Tweaks tools."
+                    : "Toggle any tweak directly — live registry status updates automatically.";
                 applyFilter();
             };
 
@@ -1766,6 +1800,7 @@ namespace WindowsTweaksApp
             navShell.Click += delegate { setCategory("Shell"); };
             navSystem.Click += delegate { setCategory("System"); };
             navTools.Click += delegate { setCategory("Tools"); };
+            navMyTools.Click += delegate { setCategory("MyTools"); };
 
             // Pill helper
             Action<string, string, string, string, TweakStatus> applyCardStatus = delegate(string pillName, string lblName, string detName, string tglName, TweakStatus st)
@@ -1799,11 +1834,36 @@ namespace WindowsTweaksApp
                 }
             };
 
+            CheckBox tglShortcuts = (CheckBox)win.FindName("TglShortcuts");
+            Button btnCreateShortcut = (Button)win.FindName("BtnCreateShortcut");
+            TextBlock txtShortcutsStatus = (TextBlock)win.FindName("TxtShortcutsStatus");
+            Action refreshShortcuts = delegate
+            {
+                try
+                {
+                    bool enabled = ShortcutIntegration.IsEnabled();
+                    tglShortcuts.IsChecked = enabled;
+                    tglShortcuts.IsEnabled = true;
+                    btnCreateShortcut.IsEnabled = enabled;
+                    txtShortcutsStatus.Text = enabled
+                        ? "Installed · Right-click a folder to create a custom shortcut. Check Show more options if needed."
+                        : "Off · Turn on to add the Explorer command.";
+                }
+                catch (Exception ex)
+                {
+                    tglShortcuts.IsChecked = false;
+                    tglShortcuts.IsEnabled = false;
+                    btnCreateShortcut.IsEnabled = false;
+                    txtShortcutsStatus.Text = "Unavailable · " + ex.Message;
+                }
+            };
+
             Action refreshAll = delegate
             {
                 _suppressToggleEvents = true;
                 try
                 {
+                    refreshShortcuts();
                     TweakStatus s1 = TweakEngine.GetStartMenuStatus();
                     TweakStatus s2 = TweakEngine.GetWebSearchStatus();
                     TweakStatus s3 = TweakEngine.GetTaskbarCleanupStatus();
@@ -1863,6 +1923,18 @@ namespace WindowsTweaksApp
             };
 
             // Toggle Handlers
+            tglShortcuts.Click += delegate
+            {
+                if (_suppressToggleEvents) return;
+                bool enable = tglShortcuts.IsChecked == true;
+                runSafe(enable ? "Install Custom Shortcut Creator" : "Disable Custom Shortcut Creator",
+                    delegate { ShortcutIntegration.SetEnabled(enable); }, null);
+            };
+            btnCreateShortcut.Click += delegate
+            {
+                runSafe("Open Custom Shortcut Creator", ShortcutIntegration.OpenEditor, null);
+            };
+
             CheckBox tglStart = (CheckBox)win.FindName("TglStartMenu");
             tglStart.Click += delegate
             {
@@ -2213,7 +2285,7 @@ namespace WindowsTweaksApp
 
             setCategory("All");
             refreshAll();
-            log("Ready. 13 tweaks + WinUtil loaded.", "INFO");
+            log("Ready. 13 tweaks, WinUtil, and Custom Shortcut Creator loaded.", "INFO");
 
             return win;
         }
