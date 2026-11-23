@@ -1640,6 +1640,30 @@ namespace WindowsTweaksApp
                                 </Grid>
                             </Border>
 
+                            <Border x:Name='CardFolderIcons' Style='{StaticResource TweakCard}'>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width='42'/>
+                                        <ColumnDefinition Width='*'/>
+                                        <ColumnDefinition Width='Auto'/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width='36' Height='36' CornerRadius='8' Background='#064E3B' VerticalAlignment='Center'>
+                                        <TextBlock Text='&#xE8B7;' FontFamily='Segoe MDL2 Assets' FontSize='16' Foreground='#34D399' HorizontalAlignment='Center' VerticalAlignment='Center'/>
+                                    </Border>
+                                    <StackPanel Grid.Column='1' Margin='12,0,14,0'>
+                                        <TextBlock Text='Subfolder Icon Applier' FontSize='13.5' FontWeight='SemiBold'/>
+                                        <TextBlock Text='Select a parent folder to set each subfolder&apos;s icon using the .ico file inside it.' FontSize='11.5' Foreground='#8B9BB4' TextWrapping='Wrap' Margin='0,3,0,0'/>
+                                        <StackPanel Orientation='Horizontal' Margin='0,4,0,0'>
+                                            <CheckBox x:Name='ChkFolderIconsRecursive' Content='Include nested subfolders' FontSize='11' Foreground='#94A3B8' Cursor='Hand'/>
+                                        </StackPanel>
+                                        <TextBlock x:Name='TxtFolderIconsStatus' Text='Ready · Writes desktop.ini and refreshes Explorer for subfolders containing a .ico file.' FontSize='11' Foreground='#64748B' TextWrapping='Wrap' Margin='0,3,0,0'/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column='2' Orientation='Horizontal' VerticalAlignment='Center'>
+                                        <Button x:Name='BtnApplyFolderIcons' Content='Select folder…' Style='{StaticResource SubtleBtn}'/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
                         </StackPanel>
                     </ScrollViewer>
 
@@ -1741,7 +1765,8 @@ namespace WindowsTweaksApp
                 new CardMeta { Card = (Border)win.FindName("CardExecPolicy"),  Category = "System", SearchText = "fix powershell execution policy remotesigned scripts" },
                 new CardMeta { Card = (Border)win.FindName("CardPowerPlan"),   Category = "System", SearchText = "ultimate performance power plan powercfg cpu speed" },
                 new CardMeta { Card = (Border)win.FindName("CardWinUtil"),     Category = "Tools",  SearchText = "chris titus tech winutil preset advanced standard minimal gui" },
-                new CardMeta { Card = (Border)win.FindName("CardShortcuts"),   Category = "MyTools", SearchText = "custom shortcut creator folder file context menu icon path start taskbar quick access pin" }
+                new CardMeta { Card = (Border)win.FindName("CardShortcuts"),   Category = "MyTools", SearchText = "custom shortcut creator folder file context menu icon path start taskbar quick access pin" },
+                new CardMeta { Card = (Border)win.FindName("CardFolderIcons"), Category = "MyTools", SearchText = "subfolder folder icon applier ico desktop.ini batch apply custom" }
             };
 
             TextBox txtSearch = (TextBox)win.FindName("TxtSearch");
@@ -1933,6 +1958,55 @@ namespace WindowsTweaksApp
             btnCreateShortcut.Click += delegate
             {
                 runSafe("Open Custom Shortcut Creator", ShortcutIntegration.OpenEditor, null);
+            };
+
+            Button btnApplyFolderIcons = (Button)win.FindName("BtnApplyFolderIcons");
+            CheckBox chkFolderIconsRecursive = (CheckBox)win.FindName("ChkFolderIconsRecursive");
+            TextBlock txtFolderIconsStatus = (TextBlock)win.FindName("TxtFolderIconsStatus");
+            btnApplyFolderIcons.Click += delegate
+            {
+                try
+                {
+                    IntPtr owner = new System.Windows.Interop.WindowInteropHelper(win).Handle;
+                    string selectedFolder = FolderIconApplier.PickFolder(owner, "Select a parent folder containing subfolders with .ico files");
+                    if (string.IsNullOrEmpty(selectedFolder)) return;
+
+                    bool includeNested = chkFolderIconsRecursive.IsChecked == true;
+                    FolderIconResult result = FolderIconApplier.ApplySubfolderIcons(selectedFolder, includeNested);
+
+                    if (result.UpdatedCount > 0)
+                    {
+                        int shown = Math.Min(result.UpdatedEntries.Count, 20);
+                        for (int i = 0; i < shown; i++)
+                        {
+                            log("Folder icon set: " + result.UpdatedEntries[i], "OK");
+                        }
+                        if (result.UpdatedEntries.Count > shown)
+                        {
+                            log(string.Format("... and {0} more subfolder(s).", result.UpdatedEntries.Count - shown), "INFO");
+                        }
+                    }
+
+                    foreach (string err in result.Errors)
+                    {
+                        log("Folder icon error: " + err, "ERROR");
+                    }
+
+                    string summary = string.Format(
+                        "Updated {0} of {1} subfolder(s) ({2} without .ico{3}) in {4}",
+                        result.UpdatedCount,
+                        result.ScannedCount,
+                        result.SkippedCount,
+                        result.Errors.Count > 0 ? string.Format(", {0} error(s)", result.Errors.Count) : "",
+                        selectedFolder);
+                    txtFolderIconsStatus.Text = summary;
+                    log(summary, result.Errors.Count > 0 ? "WARN" : (result.UpdatedCount > 0 ? "OK" : "INFO"));
+                }
+                catch (Exception ex)
+                {
+                    txtFolderIconsStatus.Text = "Failed · " + ex.Message;
+                    log("Apply subfolder icons failed: " + ex.Message, "ERROR");
+                }
             };
 
             CheckBox tglStart = (CheckBox)win.FindName("TglStartMenu");
@@ -2285,7 +2359,7 @@ namespace WindowsTweaksApp
 
             setCategory("All");
             refreshAll();
-            log("Ready. 13 tweaks, WinUtil, and Custom Shortcut Creator loaded.", "INFO");
+            log("Ready. 13 tweaks, WinUtil, Custom Shortcut Creator, and Subfolder Icon Applier loaded.", "INFO");
 
             return win;
         }

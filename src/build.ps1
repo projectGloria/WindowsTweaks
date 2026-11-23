@@ -55,10 +55,11 @@ try {
     & $csc @common @helperArgs
     if ($LASTEXITCODE -ne 0) { throw "Shortcut creator compilation failed with exit code $LASTEXITCODE" }
 
+    $folderIconsSource = Join-Path $PSScriptRoot 'FolderIconApplier.cs'
     $mainArgs = @(
         "/out:$outExe", "/win32icon:$icoPath", "/win32manifest:$manifest",
         "/resource:$icoPath,AppIcon.ico", "/resource:$helperExe,CustomShortcutCreator.exe",
-        $srcFile, $sharedSource
+        $srcFile, $sharedSource, $folderIconsSource
     )
     Write-Host "Compiling $outExe ..."
     & $csc @common @mainArgs
