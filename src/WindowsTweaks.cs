@@ -52,6 +52,7 @@ namespace WindowsTweaksApp
         public bool DisableTipsAndAds { get; set; }
         public bool PowerShellExecPolicy { get; set; }
         public bool UltimatePowerPlan { get; set; }
+        public bool RemoveDesktopWatermark { get; set; }
     }
 
     public class CardMeta
@@ -692,6 +693,49 @@ namespace WindowsTweaksApp
             RunCmdOutput("powercfg.exe", "/setactive 381b4222-f694-41f0-9685-ff5bb260df2e");
         }
 
+        // 14. Remove Desktop Watermark (In-Memory Explorer Patch + Logon Task)
+        public static TweakStatus GetWatermarkStatus()
+        {
+            try
+            {
+                bool taskInstalled = WatermarkPatcher.IsLogonTaskInstalled();
+                int explorerCount;
+                int patchedCount;
+                string targetHex;
+                WatermarkPatcher.GetMemoryStatus(out explorerCount, out patchedCount, out targetHex);
+                bool memoryPatched = (explorerCount > 0 && patchedCount == explorerCount);
+
+                if (taskInstalled && memoryPatched)
+                    return new TweakStatus { State = TweakState.Applied, Detail = string.Format("Desktop watermark hidden in memory (shell32+{0}) • Auto-applies at logon", targetHex) };
+                if (taskInstalled || patchedCount > 0)
+                    return new TweakStatus
+                    {
+                        State = TweakState.Partial,
+                        Detail = string.Format("Memory={0}/{1} Explorer patched (shell32+{2}), LogonTask={3}", patchedCount, explorerCount, targetHex, taskInstalled ? "Installed" : "Missing")
+                    };
+                return new TweakStatus { State = TweakState.Default, Detail = string.Format("Default Windows desktop watermark visible (target shell32+{0})", targetHex) };
+            }
+            catch (Exception ex)
+            {
+                return new TweakStatus { State = TweakState.Default, Detail = "Watermark status check failed: " + ex.Message };
+            }
+        }
+
+        public static void ApplyWatermarkPatch()
+        {
+            SetReg(RegistryHive.CurrentUser, RegistryView.Registry64, @"Control Panel\Desktop", "PaintDesktopVersion", 0, RegistryValueKind.DWord);
+            WatermarkPatcher.InstallLogonTask();
+            WatermarkPatcher.PatchRunningExplorer(true);
+            WatermarkPatcher.RefreshDesktopWallpaper();
+        }
+
+        public static void RevertWatermarkPatch()
+        {
+            WatermarkPatcher.UninstallLogonTask();
+            WatermarkPatcher.PatchRunningExplorer(false);
+            WatermarkPatcher.RefreshDesktopWallpaper();
+        }
+
         public static void CreateRestorePoint()
         {
             string cmd =
@@ -731,6 +775,24 @@ namespace WindowsTweaksApp
             if (Process.GetProcessesByName("explorer").Length == 0)
             {
                 Process.Start("explorer.exe");
+            }
+
+            if (WatermarkPatcher.IsLogonTaskInstalled())
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    Thread.Sleep(500);
+                    try
+                    {
+                        if (WatermarkPatcher.PatchRunningExplorer(true) > 0)
+                        {
+                            Thread.Sleep(500);
+                            WatermarkPatcher.RefreshDesktopWallpaper();
+                            break;
+                        }
+                    }
+                    catch { }
+                }
             }
         }
     }
@@ -1106,7 +1168,7 @@ namespace WindowsTweaksApp
                             <StackPanel>
                                 <Grid>
                                     <TextBlock Text='ACTIVE TWEAKS' FontSize='10' FontWeight='Bold' Foreground='#64748B'/>
-                                    <TextBlock x:Name='TxtActiveRatio' Text='0 / 13' FontSize='12' FontWeight='Bold' Foreground='#60A5FA' HorizontalAlignment='Right'/>
+                                    <TextBlock x:Name='TxtActiveRatio' Text='0 / 14' FontSize='12' FontWeight='Bold' Foreground='#60A5FA' HorizontalAlignment='Right'/>
                                 </Grid>
                                 <Border Background='#1E293B' Height='6' CornerRadius='3' Margin='0,8,0,0'>
                                     <Border x:Name='BarProgress' Background='#3B82F6' Height='6' CornerRadius='3' HorizontalAlignment='Left' Width='0'/>
@@ -1426,6 +1488,32 @@ namespace WindowsTweaksApp
                                         <TextBlock x:Name='DetContextMenu' Text='' FontSize='11' Foreground='#5E6F88' Margin='0,2,0,0'/>
                                     </StackPanel>
                                     <CheckBox x:Name='TglContextMenu' Grid.Column='2' Style='{StaticResource ToggleSwitch}'/>
+                                </Grid>
+                            </Border>
+
+                            <!-- 14. Remove Desktop Watermark -->
+                            <Border x:Name='CardWatermark' Style='{StaticResource TweakCard}'>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width='42'/>
+                                        <ColumnDefinition Width='*'/>
+                                        <ColumnDefinition Width='Auto'/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column='0' Width='36' Height='36' CornerRadius='8' Background='#1E1B4B' VerticalAlignment='Center'>
+                                        <TextBlock Text='&#xE890;' FontFamily='Segoe MDL2 Assets' FontSize='16' Foreground='#C084FC' HorizontalAlignment='Center' VerticalAlignment='Center'/>
+                                    </Border>
+                                    <StackPanel Grid.Column='1' Margin='12,0,14,0'>
+                                        <StackPanel Orientation='Horizontal'>
+                                            <TextBlock Text='Remove Desktop Watermark' FontSize='13.5' FontWeight='SemiBold'/>
+                                            <Border x:Name='PillWatermark' CornerRadius='4' Padding='7,2' Margin='10,0,0,0'>
+                                                <TextBlock x:Name='LblWatermark' Text='...' FontSize='10' FontWeight='Bold'/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text='Hides Evaluation, License countdown, Build &amp; Test Mode desktop watermarks in memory (no system files modified) and auto-applies at logon.'
+                                                   FontSize='11.5' Foreground='#8B9BB4' TextWrapping='Wrap' Margin='0,3,0,0'/>
+                                        <TextBlock x:Name='DetWatermark' Text='' FontSize='11' Foreground='#5E6F88' Margin='0,2,0,0'/>
+                                    </StackPanel>
+                                    <CheckBox x:Name='TglWatermark' Grid.Column='2' Style='{StaticResource ToggleSwitch}'/>
                                 </Grid>
                             </Border>
 
@@ -1758,6 +1846,7 @@ namespace WindowsTweaksApp
                 new CardMeta { Card = (Border)win.FindName("CardThisPc"),      Category = "Shell",  SearchText = "file explorer open this pc home quick access launchto" },
                 new CardMeta { Card = (Border)win.FindName("CardHiddenFiles"), Category = "Shell",  SearchText = "show hidden files extensions protected os superhidden explorer" },
                 new CardMeta { Card = (Border)win.FindName("CardContextMenu"), Category = "Shell",  SearchText = "restore classic right click context menu windows 10" },
+                new CardMeta { Card = (Border)win.FindName("CardWatermark"),   Category = "Shell",  SearchText = "remove hide desktop watermark evaluation license valid build test mode ltsc" },
                 new CardMeta { Card = (Border)win.FindName("CardSounds"),      Category = "System", SearchText = "disable windows system startup sounds mute audio beep" },
                 new CardMeta { Card = (Border)win.FindName("CardMouseAccel"),  Category = "System", SearchText = "disable mouse acceleration enhance pointer precision raw input" },
                 new CardMeta { Card = (Border)win.FindName("CardStickyKeys"),  Category = "System", SearchText = "disable sticky keys filter keys toggle shift popup beep" },
@@ -1902,6 +1991,7 @@ namespace WindowsTweaksApp
                     TweakStatus s11 = TweakEngine.GetTipsAdsStatus();
                     TweakStatus s12 = TweakEngine.GetExecPolicyStatus();
                     TweakStatus s13 = TweakEngine.GetPowerPlanStatus();
+                    TweakStatus s14 = TweakEngine.GetWatermarkStatus();
 
                     applyCardStatus("PillStartMenu", "LblStartMenu", "DetStartMenu", "TglStartMenu", s1);
                     applyCardStatus("PillWebSearch", "LblWebSearch", "DetWebSearch", "TglWebSearch", s2);
@@ -1918,8 +2008,9 @@ namespace WindowsTweaksApp
                     applyCardStatus("PillTipsAds", "LblTipsAds", "DetTipsAds", "TglTipsAds", s11);
                     applyCardStatus("PillExecPolicy", "LblExecPolicy", "DetExecPolicy", "TglExecPolicy", s12);
                     applyCardStatus("PillPowerPlan", "LblPowerPlan", "DetPowerPlan", "TglPowerPlan", s13);
+                    applyCardStatus("PillWatermark", "LblWatermark", "DetWatermark", "TglWatermark", s14);
 
-                    TweakStatus[] all = new[] { s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13 };
+                    TweakStatus[] all = new[] { s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14 };
                     int active = 0;
                     foreach (TweakStatus ts in all) if (ts.State == TweakState.Applied) active++;
 
@@ -2093,6 +2184,16 @@ namespace WindowsTweaksApp
                     runSafe("Revert to Windows 11 Context Menu", TweakEngine.RevertContextMenu, "Restart Explorer to restore the Windows 11 context menu.");
             };
 
+            CheckBox tglWatermark = (CheckBox)win.FindName("TglWatermark");
+            tglWatermark.Click += delegate
+            {
+                if (_suppressToggleEvents) return;
+                if (tglWatermark.IsChecked == true)
+                    runSafe("Remove Desktop Watermark", TweakEngine.ApplyWatermarkPatch, null);
+                else
+                    runSafe("Restore Desktop Watermark", TweakEngine.RevertWatermarkPatch, null);
+            };
+
             CheckBox tglSounds = (CheckBox)win.FindName("TglSounds");
             tglSounds.Click += delegate
             {
@@ -2242,7 +2343,8 @@ namespace WindowsTweaksApp
                             DisableStickyKeys = (tglSticky.IsChecked == true),
                             DisableTipsAndAds = (tglTips.IsChecked == true),
                             PowerShellExecPolicy = (tglExec.IsChecked == true),
-                            UltimatePowerPlan = (tglPower.IsChecked == true)
+                            UltimatePowerPlan = (tglPower.IsChecked == true),
+                            RemoveDesktopWatermark = (tglWatermark.IsChecked == true)
                         };
                         JavaScriptSerializer ser = new JavaScriptSerializer();
                         File.WriteAllText(sfd.FileName, ser.Serialize(prof));
@@ -2282,6 +2384,7 @@ namespace WindowsTweaksApp
                         if (p.DisableTipsAndAds) TweakEngine.ApplyTipsAds(); else TweakEngine.RevertTipsAds();
                         if (p.PowerShellExecPolicy) TweakEngine.ApplyExecPolicy(); else TweakEngine.RevertExecPolicy();
                         if (p.UltimatePowerPlan) TweakEngine.ApplyUltimatePowerPlan(); else TweakEngine.RevertUltimatePowerPlan();
+                        if (p.RemoveDesktopWatermark) TweakEngine.ApplyWatermarkPatch(); else TweakEngine.RevertWatermarkPatch();
 
                         refreshAll();
                         log("Imported & applied profile: " + Path.GetFileName(ofd.FileName), "OK");
@@ -2306,7 +2409,7 @@ namespace WindowsTweaksApp
 
             ((Button)win.FindName("BtnApplyAll")).Click += delegate
             {
-                runSafe("Apply All 13 Tweaks", delegate
+                runSafe("Apply All 14 Tweaks", delegate
                 {
                     TweakEngine.ApplyStartMenu();
                     TweakEngine.ApplyWebSearch();
@@ -2321,19 +2424,20 @@ namespace WindowsTweaksApp
                     TweakEngine.ApplyTipsAds();
                     TweakEngine.ApplyExecPolicy();
                     TweakEngine.ApplyUltimatePowerPlan();
-                }, "All 13 tweaks applied! Click 'Restart Explorer Now' (and sign out/in once for Start Menu).");
+                    TweakEngine.ApplyWatermarkPatch();
+                }, "All 14 tweaks applied! Click 'Restart Explorer Now' (and sign out/in once for Start Menu).");
             };
 
             ((Button)win.FindName("BtnRevertAll")).Click += delegate
             {
                 MessageBoxResult confirm = MessageBox.Show(
-                    "Revert all 13 tweaks back to Windows defaults?",
+                    "Revert all 14 tweaks back to Windows defaults?",
                     "Confirm Revert All",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
                 if (confirm != MessageBoxResult.Yes) return;
 
-                runSafe("Revert All 13 Tweaks", delegate
+                runSafe("Revert All 14 Tweaks", delegate
                 {
                     TweakEngine.RevertStartMenu();
                     TweakEngine.RevertWebSearch();
@@ -2348,7 +2452,8 @@ namespace WindowsTweaksApp
                     TweakEngine.RevertTipsAds();
                     TweakEngine.RevertExecPolicy();
                     TweakEngine.RevertUltimatePowerPlan();
-                }, "All 13 tweaks reverted! Restart Explorer to restore default shell UI.");
+                    TweakEngine.RevertWatermarkPatch();
+                }, "All 14 tweaks reverted! Restart Explorer to restore default shell UI.");
             };
 
             ((Button)win.FindName("BtnRefresh")).Click += delegate
@@ -2359,7 +2464,7 @@ namespace WindowsTweaksApp
 
             setCategory("All");
             refreshAll();
-            log("Ready. 13 tweaks, WinUtil, Custom Shortcut Creator, and Subfolder Icon Applier loaded.", "INFO");
+            log("Ready. 14 tweaks, WinUtil, Custom Shortcut Creator, and Subfolder Icon Applier loaded.", "INFO");
 
             return win;
         }

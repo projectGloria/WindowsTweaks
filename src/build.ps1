@@ -55,18 +55,40 @@ try {
     & $csc @common @helperArgs
     if ($LASTEXITCODE -ne 0) { throw "Shortcut creator compilation failed with exit code $LASTEXITCODE" }
 
+    $watermarkSource = Join-Path $PSScriptRoot 'WatermarkPatcher.cs'
+    $watermarkExe = Join-Path $scratch 'WatermarkPatcher.exe'
+    $watermarkManifest = Join-Path $scratch 'WatermarkPatcher.manifest'
+    $watermarkManifestText = [IO.File]::ReadAllText($manifest).
+        Replace('WindowsTweaks.app', 'WindowsTweaks.WatermarkPatcher').
+        Replace('requireAdministrator', 'asInvoker')
+    [IO.File]::WriteAllText($watermarkManifest, $watermarkManifestText)
+    $watermarkArgs = @(
+        '/nologo',
+        '/target:winexe',
+        '/optimize+',
+        '/platform:x64',
+        '/define:WATERMARK_CLI',
+        "/out:$watermarkExe",
+        "/win32manifest:$watermarkManifest",
+        "/reference:$fxDir\System.dll",
+        "/reference:$fxDir\System.Core.dll",
+        $watermarkSource
+    )
+    & $csc @watermarkArgs
+    if ($LASTEXITCODE -ne 0) { throw "WatermarkPatcher compilation failed with exit code $LASTEXITCODE" }
+
     $folderIconsSource = Join-Path $PSScriptRoot 'FolderIconApplier.cs'
     $mainArgs = @(
         "/out:$outExe", "/win32icon:$icoPath", "/win32manifest:$manifest",
-        "/resource:$icoPath,AppIcon.ico", "/resource:$helperExe,CustomShortcutCreator.exe",
-        $srcFile, $sharedSource, $folderIconsSource
+        "/resource:$icoPath,AppIcon.ico", "/resource:$helperExe,CustomShortcutCreator.exe", "/resource:$watermarkExe,WatermarkPatcher.exe",
+        $srcFile, $sharedSource, $folderIconsSource, $watermarkSource
     )
     Write-Host "Compiling $outExe ..."
     & $csc @common @mainArgs
     if ($LASTEXITCODE -ne 0) { throw "Compilation failed with exit code $LASTEXITCODE" }
 }
 finally {
-    Remove-Item -LiteralPath $helperExe, $helperManifest -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $helperExe, $helperManifest, $watermarkExe, $watermarkManifest -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $scratch -ErrorAction SilentlyContinue
 }
 
